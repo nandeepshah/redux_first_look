@@ -11,19 +11,7 @@ const initialState = [
 	{ completed: false, id: 4, text: 'read' },
 ];
 
-const initialCount = 50;
 // Step1 : Writing the reducer
-
-const counterReducer = (state = initialCount, action) => {
-	switch (action.type) {
-		case 'INCREMENT':
-			return state + 1;
-		case 'DECREMENT':
-			return state - 1;
-		default:
-			return state;
-	}
-};
 
 const todoReducer = (state, action) => {
 	switch (action.type) {
@@ -69,7 +57,6 @@ const visibitlityFilterReducer = (state = 'SHOW_ALL', action) => {
 const todoApp = combineReducers({
 	todos: todosReducer,
 	visibitlityFilter: visibitlityFilterReducer,
-	counter: counterReducer,
 });
 
 // Step2 : Writing the React UI component
@@ -127,7 +114,7 @@ class FilterLink extends Component {
 	}
 }
 
-const AddTodo = ({ onAddClick }) => {
+const AddTodo = () => {
 	let input;
 	return (
 		<div>
@@ -138,7 +125,11 @@ const AddTodo = ({ onAddClick }) => {
 			/>
 			<button
 				onClick={() => {
-					onAddClick(input.value);
+					store.dispatch({
+						type: 'ADD_TODO',
+						id: nextTodoID++,
+						text: input.value,
+					});
 					input.value = '';
 				}}
 			>
@@ -180,52 +171,38 @@ const getVisibleTodos = (todos, filter) => {
 	}
 };
 
-const Counter = ({ value, onIncrement, onDecrement }) => (
-	<div className='counter'>
-		<h1>{value}</h1>
-		<button onClick={onIncrement}>+</button>
-		<button onClick={onDecrement}>-</button>
-	</div>
-);
+class VisibleTodoList extends Component {
+	componentDidMount() {
+		this.unsubscribe = store.subscribe(() => this.forceUpdate());
+	}
 
-let nextTodoID = 100;
-const TodoApp = ({ todos, visibitlityFilter, counter }) => (
-	<div className='counter'>
-		<div id='CounterApp'>
-			<h1>Counter App!</h1>
-			<Counter
-				value={counter}
-				onIncrement={() =>
+	componentWillUnmount() {
+		this.unsubscribe();
+	}
+	render() {
+		const props = this.props;
+		const state = store.getState();
+
+		return (
+			<TodoList
+				todos={getVisibleTodos(state.todos, state.visibitlityFilter)}
+				onTodoClick={id =>
 					store.dispatch({
-						type: 'INCREMENT',
-					})
-				}
-				onDecrement={() =>
-					store.dispatch({
-						type: 'DECREMENT',
+						type: 'TOGGLE_TODO',
+						id,
 					})
 				}
 			/>
-			<h1>Todo App!</h1>
-		</div>
-		<AddTodo
-			onAddClick={text =>
-				store.dispatch({
-					type: 'ADD_TODO',
-					id: nextTodoID++,
-					text,
-				})
-			}
-		/>
-		<TodoList
-			todos={getVisibleTodos(todos, visibitlityFilter)}
-			onTodoClick={id =>
-				store.dispatch({
-					type: 'TOGGLE_TODO',
-					id,
-				})
-			}
-		/>
+		);
+	}
+}
+
+let nextTodoID = 100;
+
+const TodoApp = () => (
+	<div className='counter'>
+		<AddTodo />
+		<VisibleTodoList />
 		<Footer />
 	</div>
 );
@@ -237,12 +214,8 @@ const store = createStore(todoApp);
 // onIncrement and onDecrement are actionCreator
 // that return a action object with type property
 // these can be in a seperate file
-const render = () => {
-	ReactDOM.render(
-		<TodoApp {...store.getState()} />,
-		document.getElementById('root')
-	);
-};
 
-store.subscribe(render);
-render();
+ReactDOM.render(
+	<TodoApp {...store.getState()} />,
+	document.getElementById('root')
+);
