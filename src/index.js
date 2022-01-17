@@ -73,32 +73,59 @@ const todoApp = combineReducers({
 });
 
 // Step2 : Writing the React UI component
-const Footer = ({ visibitlityFilter, onFilterClick }) => (
+const Footer = () => (
 	<p>
-		Show:{' '}
-		<FilterLink
-			currentFilter={visibitlityFilter}
-			filter='SHOW_ALL'
-			onClick={onFilterClick}
-		>
-			All
-		</FilterLink>{' '}
-		<FilterLink
-			currentFilter={visibitlityFilter}
-			filter='SHOW_ACTIVE'
-			onClick={onFilterClick}
-		>
-			Active
-		</FilterLink>{' '}
-		<FilterLink
-			currentFilter={visibitlityFilter}
-			filter='SHOW_COMPLETED'
-			onClick={onFilterClick}
-		>
-			Completed
-		</FilterLink>
+		Show:
+		<FilterLink filter='SHOW_ALL'>All</FilterLink>{' '}
+		<FilterLink filter='SHOW_ACTIVE'>Active</FilterLink>{' '}
+		<FilterLink filter='SHOW_COMPLETED'>Completed</FilterLink>
 	</p>
 );
+
+const Link = ({ active, onClick, children }) => {
+	if (active) {
+		return <span>{children}</span>;
+	}
+	return (
+		<a
+			href='#'
+			onClick={e => {
+				e.preventDefault();
+				onClick();
+			}}
+		>
+			{children}
+		</a>
+	);
+};
+
+class FilterLink extends Component {
+	componentDidMount() {
+		this.unsubscribe = store.subscribe(() => this.forceUpdate());
+	}
+
+	componentWillUnmount() {
+		this.unsubscribe();
+	}
+	render() {
+		const props = this.props;
+		const state = store.getState();
+
+		return (
+			<Link
+				active={props.filter === state.visibitlityFilter}
+				onClick={() =>
+					store.dispatch({
+						type: 'SET_VISIBILITY_FILTER',
+						filter: props.filter,
+					})
+				}
+			>
+				{props.children}
+			</Link>
+		);
+	}
+}
 
 const AddTodo = ({ onAddClick }) => {
 	let input;
@@ -161,41 +188,26 @@ const Counter = ({ value, onIncrement, onDecrement }) => (
 	</div>
 );
 
-const FilterLink = ({ filter, currentFilter, children, onClick }) => {
-	if (filter === currentFilter) {
-		return <span>{children}</span>;
-	}
-	return (
-		<a
-			href='#'
-			onClick={e => {
-				e.preventDefault();
-				onClick(filter);
-			}}
-		>
-			{children}
-		</a>
-	);
-};
-
 let nextTodoID = 100;
 const TodoApp = ({ todos, visibitlityFilter, counter }) => (
 	<div className='counter'>
-		<h1>Counter App!</h1>
-		<Counter
-			value={counter}
-			onIncrement={() =>
-				store.dispatch({
-					type: 'INCREMENT',
-				})
-			}
-			onDecrement={() =>
-				store.dispatch({
-					type: 'DECREMENT',
-				})
-			}
-		/>
-		<h1>Todo App!</h1>
+		<div id='CounterApp'>
+			<h1>Counter App!</h1>
+			<Counter
+				value={counter}
+				onIncrement={() =>
+					store.dispatch({
+						type: 'INCREMENT',
+					})
+				}
+				onDecrement={() =>
+					store.dispatch({
+						type: 'DECREMENT',
+					})
+				}
+			/>
+			<h1>Todo App!</h1>
+		</div>
 		<AddTodo
 			onAddClick={text =>
 				store.dispatch({
@@ -214,15 +226,7 @@ const TodoApp = ({ todos, visibitlityFilter, counter }) => (
 				})
 			}
 		/>
-		<Footer
-			visibitlityFilter={visibitlityFilter}
-			onFilterClick={filter =>
-				store.dispatch({
-					type: 'SET_VISIBILITY_FILTER',
-					filter,
-				})
-			}
-		/>
+		<Footer />
 	</div>
 );
 
