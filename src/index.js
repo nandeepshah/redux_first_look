@@ -72,6 +72,47 @@ const todoApp = combineReducers({
 	counter: counterReducer,
 });
 
+// Step2 : Writing the React UI component
+const AddTodo = ({ onAddClick }) => {
+	let input;
+	return (
+		<div>
+			<input
+				ref={node => {
+					input = node;
+				}}
+			/>
+			<button
+				onClick={() => {
+					onAddClick(input.value);
+					input.value = '';
+				}}
+			>
+				Add Todo
+			</button>
+		</div>
+	);
+};
+
+const Todo = ({ onClick, completed, text }) => (
+	<li
+		onClick={onClick}
+		style={{
+			textDecoration: completed ? 'line-through' : 'none',
+		}}
+	>
+		{text}
+	</li>
+);
+
+const TodoList = ({ todos, onTodoClick }) => (
+	<ul>
+		{todos.map(todo => (
+			<Todo key={todo.id} {...todo} onClick={() => onTodoClick(todo.id)} />
+		))}
+	</ul>
+);
+
 const getVisibleTodos = (todos, filter) => {
 	switch (filter) {
 		case 'SHOW_ALL':
@@ -84,8 +125,6 @@ const getVisibleTodos = (todos, filter) => {
 			return todos;
 	}
 };
-
-// Step2 : Writing the React UI component
 
 const Counter = ({ value, onIncrement, onDecrement }) => (
 	<div className='counter'>
@@ -137,41 +176,24 @@ class TodoApp extends Component {
 					}
 				/>
 				<h1>Todo App!</h1>
-				<input
-					ref={node => {
-						this.input = node;
-					}}
-				/>
-				<button
-					onClick={() => {
+				<AddTodo
+					onAddClick={text =>
 						store.dispatch({
 							type: 'ADD_TODO',
-							text: this.input.value,
 							id: nextTodoID++,
-						});
-						this.input.value = '';
-					}}
-				>
-					Add Todo
-				</button>
-				<ul>
-					{visibleTodos.map(todo => (
-						<li
-							key={todo.id}
-							onClick={() =>
-								store.dispatch({
-									type: 'TOGGLE_TODO',
-									id: todo.id,
-								})
-							}
-							style={{
-								textDecoration: todo.completed ? 'line-through' : 'none',
-							}}
-						>
-							{todo.text}
-						</li>
-					))}
-				</ul>
+							text,
+						})
+					}
+				/>
+				<TodoList
+					todos={visibleTodos}
+					onTodoClick={id =>
+						store.dispatch({
+							type: 'TOGGLE_TODO',
+							id,
+						})
+					}
+				/>
 				<p>
 					Show:{' '}
 					<FilterLink currentFilter={visibitlityFilter} filter='SHOW_ALL'>
